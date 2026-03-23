@@ -13,6 +13,11 @@ Play Slay the Spire 2 using the MCP tools (`mcp__sts2__*`). Your goal is to play
 - **Rest Sites**: Heal if below 80% HP before boss. Otherwise upgrade or train (Girya).
 - **Shop**: Buy if 100+ gold and something useful is available.
 
+## Decision Logging
+- **Before every significant action**, call `log_agent_decision` to record your reasoning.
+- Key decision points: each combat turn (card sequence plan), card rewards, map path choices, shop purchases, rest site choices, event options.
+- Be specific: mention enemy intents, HP thresholds, card synergies, or strategic goals that influenced your choice.
+
 ## Important Rules
 - Always re-check `get_game_state` after playing cards — indices shift.
 - Use `format: "json"` in combat for precise data, `format: "markdown"` for overview screens.

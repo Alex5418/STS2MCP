@@ -11,6 +11,8 @@ import sys
 import httpx
 from mcp.server.fastmcp import FastMCP
 
+from run_logger import log_tool_call, log_decision
+
 mcp = FastMCP("sts2")
 
 _base_url: str = "http://localhost:15526"
@@ -28,6 +30,7 @@ async def _get(params: dict | None = None) -> str:
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(_sp_url(), params=params)
         r.raise_for_status()
+        log_tool_call("get_state", params or {}, r.text)
         return r.text
 
 
@@ -35,6 +38,7 @@ async def _post(body: dict) -> str:
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.post(_sp_url(), json=body)
         r.raise_for_status()
+        log_tool_call(body.get("action", "unknown"), body, r.text)
         return r.text
 
 
@@ -42,6 +46,7 @@ async def _mp_get(params: dict | None = None) -> str:
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(_mp_url(), params=params)
         r.raise_for_status()
+        log_tool_call("mp_get_state", params or {}, r.text)
         return r.text
 
 
@@ -49,6 +54,7 @@ async def _mp_post(body: dict) -> str:
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.post(_mp_url(), json=body)
         r.raise_for_status()
+        log_tool_call("mp_" + body.get("action", "unknown"), body, r.text)
         return r.text
 
 
@@ -707,6 +713,26 @@ async def mp_treasure_claim_relic(relic_index: int) -> str:
         return await _mp_post({"action": "claim_treasure_relic", "index": relic_index})
     except Exception as e:
         return _handle_error(e)
+
+
+# ---------------------------------------------------------------------------
+# Decision Logging
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+async def log_agent_decision(context: str, reasoning: str) -> str:
+    """Log your reasoning before a key decision.
+
+    Call this BEFORE every significant action (playing cards, choosing a path,
+    picking a card reward, etc.) to record why you chose that action.
+
+    Args:
+        context: Brief label for the decision point (e.g. "combat_turn_1", "card_reward", "map_path", "shop", "rest_site").
+        reasoning: Your reasoning — what you considered and why you chose this action.
+    """
+    log_decision(context, reasoning)
+    return "Decision logged."
 
 
 def main():

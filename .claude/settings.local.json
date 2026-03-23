@@ -37,7 +37,16 @@
       "mcp__sts2__mp_rewards_pick_card",
       "mcp__sts2__mp_shop_purchase",
       "mcp__sts2__mp_treasure_claim_relic",
-      "mcp__sts2__mp_rest_choose_option"
+      "mcp__sts2__mp_rest_choose_option",
+      "mcp__sts2__mp_relic_select",
+      "mcp__sts2__mp_relic_skip",
+      "mcp__sts2__mp_rewards_skip_card",
+      "mcp__sts2__mp_use_potion",
+      "mcp__sts2__mp_event_advance_dialogue",
+      "mcp__sts2__mp_combat_undo_end_turn",
+      "mcp__sts2__relic_select",
+      "mcp__sts2__relic_skip",
+      "mcp__sts2__log_agent_decision"
     ]
   },
   "enableAllProjectMcpServers": true,
