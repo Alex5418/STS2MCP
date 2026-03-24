@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "sts2": {
-      "command": "uv",
+      "command": "C:\\Users\\76982\\AppData\\Roaming\\Python\\Python39\\Scripts\\uv.exe",
       "args": ["run", "--directory", "./mcp", "python", "server.py"]
     }
   }

@@ -2,13 +2,19 @@
 
 ## MCP Tool Calling Tips
 
-### State Polling
-- After `combat_end_turn`, the state may show `is_play_phase: false` or `turn: enemy`. Call `get_game_state` again to advance to the next player turn.
-- Sometimes you need to call `get_game_state` twice — once to see enemy turn results, once to see your new hand.
-- Use `format: "json"` during combat for structured data; `format: "markdown"` for map/event overview.
+### State Polling — Token Efficiency
+- **Call `get_game_state` ONCE per turn**, at the start of your turn. Do NOT poll state between card plays.
+- After `combat_end_turn`, call `get_game_state` once to see your new hand for the next turn. If it shows `is_play_phase: false` or `turn: enemy`, call once more to advance.
+- **ALWAYS use `format="markdown"`** — it is far more token-efficient than JSON and contains all needed info.
+- Do NOT call `get_game_state` "just to check" — only call when you need to make a decision.
 
-### Card Index Shifting
-- **CRITICAL**: Playing a card removes it from hand and shifts all indices. Play cards from RIGHT to LEFT (highest index first) to keep lower indices stable, or re-check state between plays.
+### Card Index Shifting & Batch Play
+- **CRITICAL**: Playing a card removes it from hand and shifts all indices. **ALWAYS play cards from RIGHT to LEFT** (highest index first) to keep lower indices stable.
+- **Batch Play by Default**: Plan your full turn sequence from the turn-start state and execute multiple `combat_play_card` calls sequentially without checking state.
+- **EXCEPTION - When to Re-check**: You MUST pause your batch execution and re-call `get_game_state(format="markdown")` mid-turn ONLY IF a recently played card or action has unpredictable results. This includes:
+  1. Drawing new cards (Card Draw).
+  2. Random hand generation or random discarding.
+  3. Triggering an enemy phase change, split, or dynamic intent shift.
 - When targeting, always provide `target` for single-target cards. Entity IDs are UPPER_SNAKE_CASE with a `_0` suffix (e.g. `KIN_PRIEST_0`).
 
 ### Event & Reward Flow

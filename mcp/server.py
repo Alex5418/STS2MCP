@@ -721,17 +721,17 @@ async def mp_treasure_claim_relic(relic_index: int) -> str:
 
 
 @mcp.tool()
-async def log_agent_decision(context: str, reasoning: str) -> str:
+async def log_agent_decision(decision: str) -> str:
     """Log your reasoning before a key decision.
 
     Call this BEFORE every significant action (playing cards, choosing a path,
     picking a card reward, etc.) to record why you chose that action.
 
     Args:
-        context: Brief label for the decision point (e.g. "combat_turn_1", "card_reward", "map_path", "shop", "rest_site").
-        reasoning: Your reasoning — what you considered and why you chose this action.
+        decision: Your reasoning — what the situation is, what you considered, and why you chose this action.
+                  Include a brief context label at the start (e.g. "Combat turn 3: ...", "Card reward: ...", "Map: ...").
     """
-    log_decision(context, reasoning)
+    log_decision("", decision)
     return "Decision logged."
 
 
