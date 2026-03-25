@@ -13,11 +13,31 @@ Play Slay the Spire 2 using the MCP tools (`mcp__sts2__*`). Your goal is to play
 - **Rest Sites**: Heal if below 80% HP before boss. Otherwise upgrade or train (Girya).
 - **Shop**: Buy if 100+ gold and something useful is available.
 
-## Decision Logging
-- **Before every significant action**, call `log_agent_decision(decision="...")` with a single string explaining your reasoning.
-- Start with a context label, e.g. `"Combat turn 3: ..."`, `"Card reward: ..."`, `"Map: ..."`.
-- Key decision points: each combat turn (card sequence plan), card rewards, map path choices, shop purchases, rest site choices, event options.
-- Be specific: mention enemy intents, HP thresholds, card synergies, or strategic goals that influenced your choice.
+## Decision Logging (VERY IMPORTANT)
+You MUST call `log_agent_decision(decision="...")` to record your thinking. This is the most valuable output of the run. Be detailed and analytical.
+
+### Per-Turn Logging (every combat turn, every map choice, every event, etc.)
+- Call `log_agent_decision` BEFORE executing actions each turn.
+- Format: `"[Turn X] <context>: <analysis and reasoning>"`
+- Include: what you see (hand, energy, enemy intents, HP), what you considered, what you chose and WHY.
+- For combat turns, include: damage calculations, energy math, and why you prioritized offense vs defense.
+- Example: `"[Turn 3] Combat vs Jaw Worm: Enemy intends Attack 11. I have 3 energy, hand: Strike(1), Defend(1), Bash(2). Bash+Strike = 14 dmg but leaves me unblocked for 11. Defend+Strike = 6 dmg + 5 block, net -6 HP. Going all offense because Jaw Worm has 12 HP left — Bash(8)+Strike(6)=14 kills it, taking 11 is worth ending the fight."`
+
+### Per-Combat Summary (after each fight ends)
+- When combat ends (you see rewards screen), call `log_agent_decision` with a combat retrospective.
+- Format: `"[Combat Summary] <enemy> Floor <N>: <what happened>"`
+- Include: how many turns it took, HP lost, key moments (mistakes, lucky draws, good plays), what you'd do differently.
+
+### Per-Act Summary (after defeating the boss)
+- After each act boss is defeated, call `log_agent_decision` with an act retrospective.
+- Format: `"[Act X Summary]: <full act review>"`
+- Include: deck evolution (what cards added/removed/upgraded), relic pickups, path choices, HP management, biggest challenges, strategic pivots.
+- Evaluate: was the deck building coherent? What archetype emerged? What was the win condition?
+
+### Game Over / Victory Summary
+- If you die or win, call `log_agent_decision` with a full game retrospective.
+- Format: `"[Game Over - Floor X]"` or `"[Victory!]"`
+- Include: what went right, what went wrong, the 3 most impactful decisions of the run, what you'd change if replaying.
 
 ## Token Budget Rules (CRITICAL)
 These rules exist to prevent token exhaustion. Follow them strictly.

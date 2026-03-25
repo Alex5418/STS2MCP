@@ -12,7 +12,7 @@ ACTIVE_MODEL = "koboldcpp"
 # ACTIVE_MODEL = "glm4:9b"
 
 LLM_TEMPERATURE = 0.3  # Low = more deterministic decisions
-LLM_MAX_TOKENS = 4096  
+LLM_MAX_TOKENS = 1024  # Keep short — tool calls only need ~100 tokens; thinking adds ~500
 
 # --- Game ---
 GAME_BASE_URL = "http://localhost:15526"
@@ -20,8 +20,8 @@ GAME_API_URL = f"{GAME_BASE_URL}/api/v1/singleplayer"
 
 # --- Agent ---
 MAX_RETRIES_PER_ACTION = 3       # Retry on tool call errors
-MAX_HISTORY_TURNS = 10           # Keep last N exchanges to avoid context overflow
-TURN_TIMEOUT_SECONDS = 30        # Max time waiting for LLM response
+MAX_HISTORY_TURNS = 5            # Keep last N exchanges — 27B context is limited
+TURN_TIMEOUT_SECONDS = 90        # Max time waiting for LLM response (KoboldCPP can take 50s+)
 
 # --- Logging ---
 LOG_DIR = "logs"

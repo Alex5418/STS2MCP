@@ -5,6 +5,7 @@ as MCP tools for Claude Desktop / Claude Code.
 """
 
 import argparse
+import asyncio
 import json
 import sys
 
@@ -71,6 +72,39 @@ def _handle_error(e: Exception) -> str:
 # ---------------------------------------------------------------------------
 
 
+async def _get_smart(params: dict | None = None, wait_for_player_turn: bool = True) -> str:
+    """Get game state, optionally waiting until it's the player's turn.
+
+    In combat, the game alternates between player and enemy turns. Calling
+    get_state during the enemy turn returns a state the AI can't act on,
+    wasting a tool call and tokens. This helper polls (up to ~8 seconds)
+    until the state is actionable:
+      - Play Phase: True (player's turn in combat)
+      - A non-combat state (map, rewards, event, etc.)
+      - "Combat ended" transition state
+    """
+    text = await _get(params)
+
+    if not wait_for_player_turn:
+        return text
+
+    # Only poll if we're in a combat state that isn't actionable yet
+    combat_keywords = ["# Game State: monster", "# Game State: elite", "# Game State: boss"]
+    is_combat = any(kw in text for kw in combat_keywords)
+
+    if is_combat and "Play Phase: False" in text:
+        for _ in range(8):
+            await asyncio.sleep(1.0)
+            text = await _get(params)
+            # Stop polling if: player turn, combat ended, or state changed to non-combat
+            if "Play Phase: True" in text or "Combat ended" in text:
+                break
+            if not any(kw in text for kw in combat_keywords):
+                break
+
+    return text
+
+
 @mcp.tool()
 async def get_game_state(format: str = "markdown") -> str:
     """Get the current Slay the Spire 2 game state.
@@ -78,11 +112,14 @@ async def get_game_state(format: str = "markdown") -> str:
     Returns the full game state including player stats, hand, enemies, potions, etc.
     The state_type field indicates the current screen (combat, map, event, shop, etc.).
 
+    In combat, this automatically waits for the player's turn before returning,
+    so you don't need to poll repeatedly during enemy turns.
+
     Args:
         format: "markdown" for human-readable output, "json" for structured data.
     """
     try:
-        return await _get({"format": format})
+        return await _get_smart({"format": format})
     except Exception as e:
         return _handle_error(e)
 
