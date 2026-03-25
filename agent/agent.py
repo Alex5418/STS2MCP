@@ -354,15 +354,20 @@ def run_agent(model: str):
                     hand_costs = {c["index"]: c["cost"] for c in combat_info.get("hand", [])}
 
             # Track floor for act transitions
-            floor = state_json.get("floor", state_json.get("current_floor", 0))
+            run_info = state_json.get("run", {})
+            floor = run_info.get("floor", 0)
             if floor and floor != current_floor:
                 current_floor = floor
+
+            # Helper: extract player HP from state JSON
+            def _get_player_hp():
+                return state_json.get("battle", {}).get("player", {}).get("hp", "?")
 
             # ── 2. Detect state transitions ──
             if state_type != last_state_type:
                 # --- Combat just ended → log summary ---
                 if last_state_type in COMBAT_STATES and state_type not in COMBAT_STATES:
-                    hp_now = state_json.get("player", {}).get("hp") or state_json.get("hp", "?")
+                    hp_now = _get_player_hp()
                     summary = {
                         "event": "combat_summary",
                         "enemy_type": last_state_type,
@@ -379,7 +384,7 @@ def run_agent(model: str):
                 if state_type in COMBAT_STATES:
                     combat_turn = 0
                     combat_actions = []
-                    combat_hp_start = state_json.get("player", {}).get("hp") or state_json.get("hp", "?")
+                    combat_hp_start = _get_player_hp()
 
                 history = []
                 last_state_type = state_type
@@ -602,6 +607,12 @@ def run_agent(model: str):
                     {"id": tc_id, "type": "function", "function": {"name": tool_name, "arguments": json.dumps(args)}}
                 ]})
                 history.append({"role": "tool", "tool_call_id": tc_id, "content": result_str})
+
+                # "Not in combat" → combat ended naturally, not a real error
+                if "Not in combat" in error_msg:
+                    print(f"  [Step {step}] Combat already ended, moving on")
+                    error_count = 0
+                    break
 
                 # EnergyCostTooHigh → immediate end_turn
                 if "EnergyCostTooHigh" in error_msg and state_type in COMBAT_STATES:
