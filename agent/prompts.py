@@ -61,10 +61,8 @@ REWARD_ADDENDUM = """\
 REWARDS screen. Claim rewards in this order:
 1. Claim gold first.
 2. Claim potions if you have open slots.
-3. For card rewards: ONLY pick cards that improve your deck's direction. Skip cards that don't synergize.
-   - Prefer scaling cards: Strength gain, card draw, Powers.
-   - Skip redundant basic attacks or cards that don't fit.
-4. After claiming everything useful, call proceed.
+3. For card rewards: pick a card OR call skip_card_reward. After skipping, call proceed IMMEDIATELY — do NOT claim_reward again.
+4. After claiming everything useful, call proceed to leave.
 """
 
 REST_ADDENDUM = """\

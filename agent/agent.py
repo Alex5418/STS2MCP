@@ -283,6 +283,8 @@ def run_agent(model: str):
     last_state_type = None
     error_count = 0
     step = 0
+    last_action_key = None     # "tool_name|args" string for loop detection
+    repeat_count = 0           # How many times same action repeated
 
     # ── Combat tracking (for structured logging) ──
     combat_turn = 0           # Turn counter within a combat
@@ -577,6 +579,13 @@ def run_agent(model: str):
                 if status == "ok":
                     print(f"✓ {result.get('message', '')}")
                     error_count = 0
+                    # After skipping card reward, auto-proceed to avoid claim→skip loop
+                    if tool_name == "skip_card_reward":
+                        print(f"  [Step {step}] Auto-proceed after skip")
+                        try:
+                            game.proceed()
+                        except Exception:
+                            pass
                     # Decrement energy on successful card play
                     if tool_name == "play_card" and remaining_energy is not None:
                         card_idx = args.get("card_index")
@@ -621,6 +630,21 @@ def run_agent(model: str):
                     error_count = 0
                     break
 
+            # ── Loop detection: same action repeated too many times → force proceed ──
+            if tool_calls_to_process:
+                action_key = f"{tool_calls_to_process[0]['name']}|{tool_calls_to_process[0]['args']}"
+                if action_key == last_action_key:
+                    repeat_count += 1
+                    if repeat_count >= 3:
+                        print(f"  [Step {step}] Loop detected ({repeat_count}x {tool_calls_to_process[0]['name']}), forcing proceed")
+                        _force_advance(game, state_type, logger, step)
+                        repeat_count = 0
+                        last_action_key = None
+                        continue
+                else:
+                    repeat_count = 0
+                    last_action_key = action_key
+
             # Pause after map navigation (game needs time to transition)
             if tool_calls_to_process and tool_calls_to_process[-1]["name"] == "choose_map_node":
                 time.sleep(1.5)
@@ -652,12 +676,19 @@ def run_agent(model: str):
 
 
 def _force_advance(game: GameAPI, state_type: str, logger: RunLogger, step: int):
-    """Force the game forward (end turn or proceed). Logs the action."""
+    """Force the game forward (end turn, confirm selection, or proceed). Logs the action."""
     if state_type in COMBAT_STATES:
         action = "end_turn"
         print(f"  [Step {step}] Forcing end_turn")
         try:
             game.end_turn()
+        except Exception:
+            pass
+    elif state_type in ("card_select", "hand_select"):
+        action = "confirm_selection"
+        print(f"  [Step {step}] Forcing confirm_selection")
+        try:
+            game.confirm_selection()
         except Exception:
             pass
     else:
